@@ -54,46 +54,48 @@ def prepare_data(data, required_columns):
     return data[required_columns].dropna()
 
 
-# Function to split the data into training and testing sets
-
-def split_data(data, target_column="flight", test_size=0.3, downsample_ratio=1):
+def split_data(data, target_column="flight", test_size=0.25, downsample_ratio=3/365, save_path="splitted_data"):
+    # Ensure the target column is categorical for stratification
     data[target_column] = data[target_column].astype('category')
-
+    
     # Split into training and testing sets
     train_data, test_data = train_test_split(
-        data, test_size=test_size, stratify=data[target_column], random_state=123)
-
+        data, test_size=test_size, stratify=data[target_column], random_state=168
+    )
+    
     print(f"Original dataset size: {len(data)}")
     print(f"Training dataset size: {len(train_data)}")
     print(f"Testing dataset size: {len(test_data)}")
-
+    
     # Separate majority and minority classes
     flight_0 = train_data[train_data[target_column] == 0]
     flight_not_0 = train_data[train_data[target_column] != 0]
-
+    
     print(f"Training 'flight=0' size before downsampling: {len(flight_0)}")
     print(f"Training 'flight!=0' size: {len(flight_not_0)}")
-
-    # Calculate the dynamic downsample fraction
-    downsample_fraction = (len(flight_not_0) *
-                           downsample_ratio) / len(flight_0)
-    # Ensure it doesn't exceed 1.0
-    downsample_fraction = min(downsample_fraction, 1.0)
-
-    print(f"Calculated downsample fraction: {downsample_fraction:.4f}")
-
+    
     # Downsample the majority class
     sampled_flight_0 = flight_0.sample(
-        frac=downsample_fraction, random_state=123)
-
-    print(f"Training 'flight=0' size after downsampling: {
-          len(sampled_flight_0)}")
-
+        frac=downsample_ratio, random_state=123
+    )
+    
+    print(f"Training 'flight=0' size after downsampling: {len(sampled_flight_0)}")
+    
     # Combine downsampled majority class with the minority class
     train_data = pd.concat([sampled_flight_0, flight_not_0], ignore_index=True)
-
+    
     print(f"Final training dataset size after downsampling: {len(train_data)}")
-
+    
+    # Save datasets as CSV
+    train_csv_path = f"{save_path}/train_data.csv"
+    test_csv_path = f"{save_path}/test_data.csv"
+    
+    train_data.to_csv(train_csv_path, index=False)
+    test_data.to_csv(test_csv_path, index=False)
+    
+    print(f"Training data saved to: {train_csv_path}")
+    print(f"Testing data saved to: {test_csv_path}")
+    
     return train_data, test_data
 
 
