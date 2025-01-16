@@ -1,30 +1,16 @@
-from read_data import *
-from generate_models import produce_nn
-import matplotlib.pyplot as plt
-from sklearn.metrics import matthews_corrcoef, confusion_matrix
+import os
 import pickle
+import matplotlib.pyplot as plt
+from sklearn.metrics import matthews_corrcoef, confusion_matrix, classification_report
+from read_data import cf_test_data, cg_test_data
 
-
-# Function to load a model from a pickle file
+# Function to load models from the models directory
 def load_model(file_name):
-    with open(file_name, "rb") as f:
+    """Load a model from a pickle file."""
+    file_path = os.path.join("./models", file_name)
+    with open(file_path, "rb") as f:
         model = pickle.load(f)
     return model
-
-
-# Load models for the cf dataset
-cf_glm = load_model("cf_glm_model.pkl")
-cf_rf = load_model("cf_rf_model.pkl")
-cf_lda = load_model("cf_lda_model.pkl")
-cf_svm = load_model("cf_svm_model.pkl")
-cf_nn = load_model("cf_nn_model.pkl")
-
-# Load models for the cg dataset
-cg_glm = load_model("cg_glm_model.pkl")
-cg_rf = load_model("cg_rf_model.pkl")
-cg_lda = load_model("cg_lda_model.pkl")
-cg_svm = load_model("cg_svm_model.pkl")
-cg_nn = load_model("cg_nn_model.pkl")
 
 
 # Helper functions
@@ -38,36 +24,38 @@ def predict_with_threshold(probabilities, threshold):
     return (probabilities > threshold).astype(int)
 
 
-def calculate_threshold(predictions, test_data, target_column="flight", binary=False):
+def calculate_threshold(predictions, test_data, target_column="flight"):
     """Find the best threshold for MCC."""
     best_threshold = 0
     highest_mcc = -1
     actual_classes = test_data[target_column]
 
-    if not binary:
-        for threshold in [i / 1000 for i in range(1001)]:
-            predicted_classes = predict_with_threshold(predictions, threshold)
-            mcc = calculate_mcc(predicted_classes, actual_classes)
-            if mcc > highest_mcc:
-                highest_mcc = mcc
-                best_threshold = threshold
-    else:
-        best_threshold = 0.5  # Default threshold for binary probabilities
+    # Search for the best threshold
+    for threshold in [i / 1000 for i in range(1001)]:
+        predicted_classes = predict_with_threshold(predictions, threshold)
+        mcc = calculate_mcc(predicted_classes, actual_classes)
+        if mcc > highest_mcc:
+            highest_mcc = mcc
+            best_threshold = threshold
 
     final_classes = predict_with_threshold(predictions, best_threshold)
-    print(f"Best threshold: {best_threshold}")
-    print(f"Highest MCC: {highest_mcc}")
+    print(f"Best threshold: {best_threshold:.3f}")
+    print(f"Highest MCC: {highest_mcc:.3f}")
     print("Confusion Matrix:")
     print(confusion_matrix(actual_classes, final_classes))
+    print("Classification Report:")
+    print(classification_report(actual_classes, final_classes))
     return final_classes
 
 
-def evaluate_model(model, test_data, target_column="flight", binary=False):
+def evaluate_model(model, test_data, target_column="flight"):
     """Evaluate a trained model with predictions and MCC."""
-    predictions = model.predict_proba(test_data.drop(columns=[target_column]))[:, 1]
-    final_classes = calculate_threshold(predictions, test_data, target_column, binary)
-    mcc = calculate_mcc(final_classes, test_data[target_column])
-    print(f"MCC: {mcc}")
+    X_test = test_data.drop(columns=[target_column])
+    y_test = test_data[target_column]
+    predictions = model.predict_proba(X_test)[:, 1]
+    final_classes = calculate_threshold(predictions, test_data, target_column)
+    mcc = calculate_mcc(final_classes, y_test)
+    print(f"MCC: {mcc:.3f}")
     return predictions, final_classes, mcc
 
 
@@ -80,20 +68,35 @@ def plot_results(test_data, final_classes, title="Model Predictions"):
     plt.show()
 
 
+def load_all_models(prefix):
+    """Load all models for a specific dataset."""
+    models = {
+        "GLM": load_model(f"{prefix}_glm_model.pkl"),
+        "RF": load_model(f"{prefix}_rf_model.pkl"),
+        "LDA": load_model(f"{prefix}_lda_model.pkl"),
+        "SVM": load_model(f"{prefix}_svm_model.pkl"),
+        "NN": load_model(f"{prefix}_nn_model.pkl"),
+    }
+    return models
+
+
+def run_evaluation(test_data, prefix):
+    """Run evaluation for all models in the specified prefix."""
+    models = load_all_models(prefix)
+    for name, model in models.items():
+        print(f"Evaluating {prefix} {name}...")
+        predictions, final_classes, mcc = evaluate_model(model, test_data)
+        plot_results(test_data, final_classes, title=f"{prefix.upper()} {name} Predictions")
+
+
+# Main evaluation function
 def run():
-    # Evaluate models for the cf dataset
-    for name, model in [("GLM", cf_glm), ("RF", cf_rf), ("LDA", cf_lda), ("SVM", cf_svm), ("NN", cf_nn)]:
-        predictions, final_classes, mcc = evaluate_model(model, cf_test_data)
-        plot_results(cf_test_data, final_classes, title=f"CF {name} Predictions")
+    print("Evaluating CF dataset...")
+    run_evaluation(cf_test_data, "cf")
 
-    # Evaluate models for the cg dataset
-    for name, model in [("GLM", cg_glm), ("RF", cg_rf), ("LDA", cg_lda), ("SVM", cg_svm), ("NN", cg_nn)]:
-        predictions, final_classes, mcc = evaluate_model(model, cg_test_data)
-        plot_results(cg_test_data, final_classes, title=f"CG {name} Predictions")
+    print("\nEvaluating CG dataset...")
+    run_evaluation(cg_test_data, "cg")
 
 
-cf_nn = produce_nn(cf_train_data, "cf_nn")
-test_data = cf_test_data
-test_model = cf_nn
-predictions, final_classes, mcc = evaluate_model(test_model, test_data)
-plot_results(test_data, final_classes, title=f"Predictions")
+if __name__ == "__main__":
+    run()
