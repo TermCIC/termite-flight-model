@@ -58,10 +58,12 @@ def prepare_data(data, required_columns):
 def split_data(data, target_column="flight", downsample_fraction=0.01, test_size=0.1):
     """Split data into training and testing sets."""
     data[target_column] = data[target_column].astype('category')
-    train_data, test_data = train_test_split(data, test_size=test_size, stratify=data[target_column])
+    train_data, test_data = train_test_split(
+        data, test_size=test_size, stratify=data[target_column])
     flight_0 = train_data[train_data[target_column] == 0]
     flight_not_0 = train_data[train_data[target_column] != 0]
-    sampled_flight_0 = flight_0.sample(frac=downsample_fraction, random_state=123)
+    sampled_flight_0 = flight_0.sample(
+        frac=downsample_fraction, random_state=123)
     train_data = pd.concat([sampled_flight_0, flight_not_0], ignore_index=True)
     return train_data, test_data
 
