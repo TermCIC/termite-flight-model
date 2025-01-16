@@ -60,7 +60,7 @@ def produce_lda(train_data, treatment_name):
 # Support Vector Machine
 def produce_svm(train_data, treatment_name):
     model = SVC(probability=True, random_state=123)
-    param_grid = {"C": [0.1, 1, 10], "kernel": ["linear", "rbf"]}
+    param_grid = {"C": [0.1, 1], "kernel": ["linear", "rbf"]}
     return train_with_grid_search(model, param_grid, train_data, treatment_name)
 
 

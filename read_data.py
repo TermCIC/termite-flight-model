@@ -55,17 +55,30 @@ def prepare_data(data, required_columns):
 
 
 # Function to split the data into training and testing sets
-def split_data(data, target_column="flight", downsample_fraction=0.01, test_size=0.3):
-    """Split data into training and testing sets."""
+def split_data(data, target_column="flight", test_size=0.3, downsample_ratio=1.0):
     data[target_column] = data[target_column].astype('category')
+    
+    # Split into training and testing sets
     train_data, test_data = train_test_split(
-        data, test_size=test_size, stratify=data[target_column])
+        data, test_size=test_size, stratify=data[target_column], random_state=123)
+    
+    # Separate majority and minority classes
     flight_0 = train_data[train_data[target_column] == 0]
     flight_not_0 = train_data[train_data[target_column] != 0]
+    
+    # Calculate the dynamic downsample fraction
+    downsample_fraction = (len(flight_not_0) * downsample_ratio) / len(flight_0)
+    downsample_fraction = min(downsample_fraction, 1.0)  # Ensure it doesn't exceed 1.0
+    
+    # Downsample the majority class
     sampled_flight_0 = flight_0.sample(
         frac=downsample_fraction, random_state=123)
+    
+    # Combine downsampled majority class with the minority class
     train_data = pd.concat([sampled_flight_0, flight_not_0], ignore_index=True)
+    
     return train_data, test_data
+
 
 
 # Prepare the datasets (cf_data and cg_data)
