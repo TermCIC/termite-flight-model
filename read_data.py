@@ -55,7 +55,7 @@ def prepare_data(data, required_columns):
 
 
 # Function to split the data into training and testing sets
-def split_data(data, target_column="flight", test_size=0.3, downsample_ratio=1.0):
+def split_data(data, target_column="flight", test_size=0.5, downsample_ratio=1.0):
     data[target_column] = data[target_column].astype('category')
     
     # Split into training and testing sets

@@ -28,7 +28,7 @@ def train_with_grid_search(model, param_grid, train_data, treatment_name, target
     """Train a model with hyperparameter tuning and save the best model."""
     X_train = train_data.drop(columns=[target_column])
     y_train = train_data[target_column]
-    grid_search = GridSearchCV(model, param_grid, scoring="roc_auc", cv=3, n_jobs=-1, verbose=1)
+    grid_search = GridSearchCV(model, param_grid, scoring="roc_auc", cv=2, n_jobs=-1, verbose=1)
     grid_search.fit(X_train, y_train)
     best_model = grid_search.best_estimator_
     file_path = os.path.join("./models", f"{treatment_name}_model.pkl")
@@ -60,7 +60,7 @@ def produce_lda(train_data, treatment_name):
 # Support Vector Machine
 def produce_svm(train_data, treatment_name):
     model = SVC(probability=True, random_state=123)
-    param_grid = {"C": [0.1, 1], "kernel": ["linear", "rbf"]}
+    param_grid = {"C": [0.1, 1], "kernel": ["linear"]}
     return train_with_grid_search(model, param_grid, train_data, treatment_name)
 
 
