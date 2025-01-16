@@ -28,7 +28,7 @@ def train_with_grid_search(model, param_grid, train_data, treatment_name, target
     """Train a model with hyperparameter tuning and save the best model."""
     X_train = train_data.drop(columns=[target_column])
     y_train = train_data[target_column]
-    grid_search = GridSearchCV(model, param_grid, scoring="roc_auc", cv=2, n_jobs=-1, verbose=1)
+    grid_search = GridSearchCV(model, param_grid, scoring="roc_auc", cv=5, n_jobs=-1, verbose=1)
     grid_search.fit(X_train, y_train)
     best_model = grid_search.best_estimator_
     file_path = os.path.join("./models", f"{treatment_name}_model.pkl")
@@ -60,7 +60,7 @@ def produce_lda(train_data, treatment_name):
 # Support Vector Machine
 def produce_svm(train_data, treatment_name):
     model = SVC(probability=True, random_state=123)
-    param_grid = {"C": [0.1, 1], "kernel": ["linear"]}
+    param_grid = {"C": [0.1, 1, 10], "kernel": ["rbf"]}
     return train_with_grid_search(model, param_grid, train_data, treatment_name)
 
 
@@ -76,14 +76,14 @@ def produce_nn(train_data, treatment_name):
 
 
 # Train Models
-cf_glm = produce_glm(cf_train_data, "cf_glm")
-cf_rf, _ = produce_rf(cf_train_data, "cf_rf")
-cf_lda = produce_lda(cf_train_data, "cf_lda")
-cf_svm, _ = produce_svm(cf_train_data, "cf_svm")
-cf_nn, _ = produce_nn(cf_train_data, "cf_nn")
+produce_glm(cf_train_data, "cf_glm")
+produce_rf(cf_train_data, "cf_rf")
+produce_lda(cf_train_data, "cf_lda")
+produce_svm(cf_train_data, "cf_svm")
+produce_nn(cf_train_data, "cf_nn")
 
-cg_glm = produce_glm(cg_train_data, "cg_glm")
-cg_rf, _ = produce_rf(cg_train_data, "cg_rf")
-cg_lda = produce_lda(cg_train_data, "cg_lda")
-cg_svm, _ = produce_svm(cg_train_data, "cg_svm")
-cg_nn, _ = produce_nn(cg_train_data, "cg_nn")
+produce_glm(cg_train_data, "cg_glm")
+produce_rf(cg_train_data, "cg_rf")
+produce_lda(cg_train_data, "cg_lda")
+produce_svm(cg_train_data, "cg_svm")
+produce_nn(cg_train_data, "cg_nn")

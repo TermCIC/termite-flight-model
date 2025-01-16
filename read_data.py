@@ -55,30 +55,49 @@ def prepare_data(data, required_columns):
 
 
 # Function to split the data into training and testing sets
+
 def split_data(data, target_column="flight", test_size=0.5, downsample_ratio=1.0):
+    """
+    Split data into training and testing sets with optional downsampling for class imbalance.
+    """
     data[target_column] = data[target_column].astype('category')
-    
+
     # Split into training and testing sets
     train_data, test_data = train_test_split(
         data, test_size=test_size, stratify=data[target_column], random_state=123)
-    
+
+    print(f"Original dataset size: {len(data)}")
+    print(f"Training dataset size: {len(train_data)}")
+    print(f"Testing dataset size: {len(test_data)}")
+
     # Separate majority and minority classes
     flight_0 = train_data[train_data[target_column] == 0]
     flight_not_0 = train_data[train_data[target_column] != 0]
-    
+
+    print(f"Training 'flight=0' size before downsampling: {len(flight_0)}")
+    print(f"Training 'flight!=0' size: {len(flight_not_0)}")
+
     # Calculate the dynamic downsample fraction
-    downsample_fraction = (len(flight_not_0) * downsample_ratio) / len(flight_0)
-    downsample_fraction = min(downsample_fraction, 1.0)  # Ensure it doesn't exceed 1.0
-    
+    downsample_fraction = (len(flight_not_0) *
+                           downsample_ratio) / len(flight_0)
+    # Ensure it doesn't exceed 1.0
+    downsample_fraction = min(downsample_fraction, 1.0)
+
+    print(f"Calculated downsample fraction: {downsample_fraction:.4f}")
+
     # Downsample the majority class
     sampled_flight_0 = flight_0.sample(
         frac=downsample_fraction, random_state=123)
-    
+
+    print(f"Training 'flight=0' size after downsampling: {
+          len(sampled_flight_0)}")
+
     # Combine downsampled majority class with the minority class
     train_data = pd.concat([sampled_flight_0, flight_not_0], ignore_index=True)
-    
-    return train_data, test_data
 
+    print(f"Final training dataset size after downsampling: {len(train_data)}")
+
+    return train_data, test_data
 
 
 # Prepare the datasets (cf_data and cg_data)
