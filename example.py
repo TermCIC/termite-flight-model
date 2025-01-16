@@ -1,9 +1,12 @@
 import numpy as np
+import tensorflow as tf
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import matthews_corrcoef
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense
-from tensorflow.keras.utils import to_categorical
+
+
+Sequential = tf.keras.models.Sequential
+Dense = tf.keras.layers.Dense
+to_categorical = tf.keras.utils.to_categorical
 
 # Generate synthetic data for binary classification
 np.random.seed(42)
