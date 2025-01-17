@@ -49,11 +49,9 @@ def calculate_threshold(predictions, test_data, target_column="flight"):
     return final_classes, best_threshold, highest_mcc
 
 
-def evaluate_model(model, test_data, prefix, model_name, target_column="flight"):
+def evaluate_model(predictions, test_data, prefix, model_name, target_column="flight"):
     """Evaluate a trained model with predictions, MCC, and save results."""
-    X_test = test_data.drop(columns=[target_column])
     y_test = test_data[target_column]
-    predictions = model.predict_proba(X_test)[:, 1]
     final_classes, best_threshold, mcc = calculate_threshold(predictions, test_data, target_column)
 
     # Calculate confusion matrix and accuracy
@@ -107,7 +105,8 @@ def run_evaluation(test_data, prefix):
     models = load_all_models(prefix)
     for name, model in models.items():
         print(f"Evaluating {prefix} {name}...")
-        predictions, final_classes, mcc = evaluate_model(model, test_data, prefix, name)
+        predictions = model.predict_proba(X_test)[:, 1]
+        final_classes, mcc = evaluate_model(predictions, test_data, prefix, name)
         plot_results(test_data, final_classes, title=f"{prefix.upper()} {name} Predictions")
 
 
