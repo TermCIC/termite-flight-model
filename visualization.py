@@ -75,6 +75,7 @@ def plot_flight_frequency_density(test_data, title="Kernel Density Plot of Fligh
     """Generate a kernel density plot for the frequency of flight events in the dataset."""
     # Ensure the target column is numeric
     test_data[target_column] = test_data[target_column].astype(int)
+    test_data["Flight"] = test_data[target_column]
 
     # Main figure and density plot
     fig, ax = plt.subplots(figsize=(4, 3))
@@ -83,7 +84,7 @@ def plot_flight_frequency_density(test_data, title="Kernel Density Plot of Fligh
     sns.kdeplot(
         data=test_data,
         x="day",
-        hue=target_column,
+        hue="Flight",  # Use the new column for the legend
         fill=True,
         common_norm=False,
         alpha=0.5,
@@ -94,7 +95,7 @@ def plot_flight_frequency_density(test_data, title="Kernel Density Plot of Fligh
     # Set labels and limits
     ax.set_xlabel("")
     # ax.set_xlabel("Day", fontsize=12)
-    ax.set_ylabel("Density", fontsize=12)
+    ax.set_ylabel("", fontsize=12)
     ax.set_xlim(1, 365)
     ax.set_xticks([])  # Remove x-ticks for similar style
     ax.set_ylim(0, 0.05)  # Allow y-axis to adjust automatically
@@ -176,11 +177,11 @@ def plot_ensemble_score_density_points(ensemble_score, test_data, title="Ensembl
     # Set labels and limits
     ax.set_xlabel("")
     ax.set_xticks([])  # Remove x-ticks for similar style
-    ax.set_ylabel("Density", fontsize=12)
+    ax.set_ylabel("", fontsize=12)
     ax.set_xlim(1, 365)
     ax.set_ylim(0, 0.05)
     ax.grid(True, linestyle="--", alpha=0.6)
-    ax.legend(title="Ensemble Score", fontsize=10, title_fontsize=10)
+    ax.legend(title="Ensemble score", fontsize=10, title_fontsize=10)
 
     # Create a secondary axis below for the month ranges
     ax_months = ax.twiny()
