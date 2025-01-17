@@ -1,6 +1,8 @@
 import seaborn as sns
 import matplotlib.pyplot as plt
 import pandas as pd
+import json
+import os
 
 # Set global font to Arial
 plt.rcParams["font.family"] = "Arial"
@@ -128,6 +130,7 @@ def plot_flight_frequency_density(test_data, title="Kernel Density Plot of Fligh
         print(f"Saved figure to {output_filename}")
     plt.show()
 
+
 def plot_ensemble_score_density_points(ensemble_score, test_data, title="Ensemble Score Densities", output_filename=None):
     """Plot densities of ensemble scores at specific points (0, 0.25, 0.5, 0.75, 1) in the same figure."""
     # Define the month ranges for a non-leap year
@@ -194,3 +197,46 @@ def plot_ensemble_score_density_points(ensemble_score, test_data, title="Ensembl
         plt.savefig(output_filename, dpi=300)
         print(f"Saved figure to {output_filename}")
     plt.show()
+
+
+def collect_evaluation_results(output_csv="./output/evaluation_results_summary.csv"):
+    """Collect data from JSON files in evaluation_results and organize them into a table."""
+    results_folder = "./evaluation_results"
+    organized_data = []
+
+    # Iterate through all JSON files in the folder
+    for filename in os.listdir(results_folder):
+        if filename.endswith(".json"):
+            filepath = os.path.join(results_folder, filename)
+            with open(filepath, "r") as f:
+                data = json.load(f)
+
+            # Extract metrics from the JSON file
+            accuracy = data.get("Accuracy")
+            mcc = data.get("MCC")
+            best_threshold = data.get("Best Threshold")
+            confusion_matrix = data.get("Confusion Matrix")
+            actual_0_pred_0 = confusion_matrix["Actual 0"]["Predicted 0"]
+            actual_0_pred_1 = confusion_matrix["Actual 0"]["Predicted 1"]
+            actual_1_pred_0 = confusion_matrix["Actual 1"]["Predicted 0"]
+            actual_1_pred_1 = confusion_matrix["Actual 1"]["Predicted 1"]
+
+            # Extract the model name from the filename
+            model_name = filename.replace(".json", "")
+
+            # Append the data as a dictionary
+            organized_data.append({
+                "Model Name": model_name,
+                "Accuracy": accuracy,
+                "MCC": mcc,
+                "Best Threshold": best_threshold,
+                "Actual 0 Predicted 0": actual_0_pred_0,
+                "Actual 0 Predicted 1": actual_0_pred_1,
+                "Actual 1 Predicted 0": actual_1_pred_0,
+                "Actual 1 Predicted 1": actual_1_pred_1
+            })
+
+    # Create a DataFrame and save it as a CSV
+    df = pd.DataFrame(organized_data)
+    df.to_csv(output_csv, index=False)
+    print(f"Saved organized evaluation results to {output_csv}")
