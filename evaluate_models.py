@@ -112,13 +112,9 @@ def run_evaluation(test_data, prefix):
 
 
 # Main evaluation function
-def run():
+def run_evaluation():
     print("Evaluating CF dataset...")
     run_evaluation(cf_test_data, "cf")
 
     print("\nEvaluating CG dataset...")
     run_evaluation(cg_test_data, "cg")
-
-
-if __name__ == "__main__":
-    run()
