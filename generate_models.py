@@ -151,5 +151,4 @@ def generate_models():
     produce_svm(cg_train_data, "cg_svm")
     produce_nn(cg_train_data, "cg_nn")
 
-
 generate_models()

@@ -39,18 +39,22 @@ print(cg_data.head())
 
 
 # Define the list of required columns
+#required_columns = [
+#    "flight", "elevation", "temperature_2m_max", "temperature_2m_min", "temperature_2m_mean",
+#    "apparent_temperature_max", "apparent_temperature_min", "apparent_temperature_mean",
+#    "daylight_duration", "precipitation_sum", "rain_sum", "precipitation_hours",
+#    "wind_speed_10m_max", "wind_gusts_10m_max", "shortwave_radiation_sum",
+#    "et0_fao_evapotranspiration", "latitude", "longitude", "day", "cumulative_temperature_2m_mean",
+#    "cumulative_apparent_temperature_mean", "cumulative_daylight_duration",
+#    "cumulative_sunshine_duration", "cumulative_precipitation_sum", "cumulative_rain_sum",
+#    "cumulative_precipitation_hours", "cumulative_shortwave_radiation_sum",
+#    "cumulative_et0_fao_evapotranspiration"
+#]
+
 required_columns = [
     "flight", "elevation", "temperature_2m_max", "temperature_2m_min", "temperature_2m_mean",
-    "apparent_temperature_max", "apparent_temperature_min", "apparent_temperature_mean",
-    "daylight_duration", "precipitation_sum", "rain_sum", "precipitation_hours",
-    "wind_speed_10m_max", "wind_gusts_10m_max", "shortwave_radiation_sum",
-    "et0_fao_evapotranspiration", "latitude", "longitude", "day", "cumulative_temperature_2m_mean",
-    "cumulative_apparent_temperature_mean", "cumulative_daylight_duration",
-    "cumulative_sunshine_duration", "cumulative_precipitation_sum", "cumulative_rain_sum",
-    "cumulative_precipitation_hours", "cumulative_shortwave_radiation_sum",
-    "cumulative_et0_fao_evapotranspiration"
-]
-
+    "precipitation_sum", "latitude", "longitude", "day"
+    ]
 
 # Function to check for missing columns and select required columns
 def prepare_data(data, required_columns):

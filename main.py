@@ -9,7 +9,6 @@ cf_ensemble = calculate_ensemble_score(
 cg_ensemble = calculate_ensemble_score(
     cg_test_data, "cg", target_column="flight")
 
-
 def evaluate_ensemble_scores(ensemble_scores, test_data, prefix, target_column="flight"):
     """Evaluate ensemble scores at specific thresholds."""
     thresholds = [0, 0.25, 0.5, 0.75, 1]
