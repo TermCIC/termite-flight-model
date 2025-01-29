@@ -386,9 +386,235 @@ def append_whole_year_data_of_colonies(source_excel, destination_db):
 
     conn.close()
 
+
+def ensure_day_column_exists(database_path):
+    """
+    Ensures the 'day' column exists in the SQLite database.
+    - If 'day' column is missing, it adds the column and populates it.
+    - If 'day' column exists but has NULL values, it updates only those entries.
+
+    Parameters:
+        database_path (str): Path to the SQLite database file.
+    """
+    # Connect to the database
+    conn = sqlite3.connect(database_path)
+    cursor = conn.cursor()
+
+    # Check if 'day' column exists
+    cursor.execute("PRAGMA table_info(weather_data);")
+    columns = [col[1] for col in cursor.fetchall()]
+
+    if 'day' not in columns:
+        print(f"'day' column not found in {database_path}. Adding it now...")
+
+        # Add 'day' column to the table
+        cursor.execute("ALTER TABLE weather_data ADD COLUMN day INTEGER;")
+        conn.commit()
+
+    # Check for rows where 'day' is NULL and update them
+    cursor.execute("SELECT latitude, longitude, date FROM weather_data WHERE day IS NULL")
+    missing_entries = cursor.fetchall()
+
+    if missing_entries:
+        print(f"Found {len(missing_entries)} entries with missing 'day' values. Updating...")
+
+        # Convert data to DataFrame
+        df = pd.DataFrame(missing_entries, columns=['latitude', 'longitude', 'date'])
+
+        # Convert 'date' column to datetime and extract day of year
+        df['date'] = pd.to_datetime(df['date'])
+        df['day'] = df['date'].dt.dayofyear  # Extract day of year
+
+        # Update each row with the correct 'day' value
+        for index, row in df.iterrows():
+            cursor.execute(
+                "UPDATE weather_data SET day = ? WHERE latitude = ? AND longitude = ? AND date = ?",
+                (row['day'], row['latitude'], row['longitude'], row['date'].strftime("%Y-%m-%d"))
+            )
+
+        conn.commit()
+        print(f"Successfully updated missing 'day' values in {database_path}.")
+    else:
+        print(f"No missing 'day' values found in {database_path}. Everything is up-to-date.")
+
+    # Close the database connection
+    conn.close()
+
+
+def fetch_whole_year_data_from_csv(csv_file, destination_db):
+    """
+    Fetch climate data for the year 2024 for all LATDD and LONDD provided in a CSV file,
+    and save the data into a SQLite database. Skips entries that already exist in the database
+    and removes duplicates for the same coordinate and date.
+
+    Parameters:
+        csv_file (str): Path to the input CSV file containing LATDD and LONDD columns.
+        destination_db (str): Path to the SQLite database where data will be stored.
+    """
+    # Read CSV file
+    df = pd.read_csv(csv_file)
+
+    # Ensure required columns exist
+    if 'LATDD' not in df.columns or 'LONDD' not in df.columns:
+        raise ValueError("CSV file must contain 'LATDD' and 'LONDD' columns.")
+
+    # Load or create the destination SQLite database
+    conn = sqlite3.connect(destination_db)
+    cursor = conn.cursor()
+
+    # Check if 'day' column exists in the table, if not, add it
+    cursor.execute("PRAGMA table_info(weather_data);")
+    columns = [col[1] for col in cursor.fetchall()]
+    if 'day' not in columns:
+        cursor.execute("ALTER TABLE weather_data ADD COLUMN day INTEGER;")
+        conn.commit()
+
+    # Create table if it does not exist
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS weather_data (
+            latitude REAL,
+            longitude REAL,
+            date TEXT,
+            elevation REAL,
+            temperature_2m_max REAL,
+            temperature_2m_min REAL,
+            temperature_2m_mean REAL,
+            apparent_temperature_max REAL,
+            apparent_temperature_min REAL,
+            apparent_temperature_mean REAL,
+            daylight_duration REAL,
+            sunshine_duration REAL,
+            precipitation_sum REAL,
+            rain_sum REAL,
+            precipitation_hours REAL,
+            wind_speed_10m_max REAL,
+            wind_gusts_10m_max REAL,
+            wind_direction_10m_dominant REAL,
+            shortwave_radiation_sum REAL,
+            et0_fao_evapotranspiration REAL,
+            day INTEGER,  -- New column for day of year
+            PRIMARY KEY (latitude, longitude, date)  -- Ensures no duplicate entries
+        )
+    ''')
+    conn.commit()
+
+    # Fetch existing coordinates and dates in the database to avoid duplication
+    cursor.execute("SELECT latitude, longitude, date FROM weather_data")
+    existing_entries = set(cursor.fetchall())  # Stored as a set for quick lookup
+
+    # Loop through each latitude and longitude pair
+    for index, row in df.iterrows():
+        latitude = row['LATDD']
+        longitude = row['LONDD']
+
+        if not pd.isna(latitude) and not pd.isna(longitude):
+            print(f"Processing LAT={latitude}, LON={longitude} (Year 2024)...")
+
+            try:
+                # Fetch whole-year data for 2024
+                data_fetched = fetch_climate_data(
+                    latitude, longitude, 2024, 1, 1, one_single_day=False)
+
+                # Insert only if the data doesn't already exist in the database
+                for i in range(len(data_fetched['date'])):
+                    date = data_fetched['date'][i].strftime("%Y-%m-%d")
+                    day_of_year = data_fetched['date'][i].timetuple().tm_yday  # Extract day of year
+
+                    # Check if this (latitude, longitude, date) already exists
+                    if (latitude, longitude, date) in existing_entries:
+                        print(
+                            f"Skipping existing entry: LAT={latitude}, LON={longitude}, DATE={date}")
+                        continue  # Skip if entry already exists
+
+                    # Prepare row data
+                    row_data = (
+                        float(latitude),
+                        float(longitude),
+                        date,
+                        float(data_fetched['elevation']),
+                        float(data_fetched['temperature_2m_max'][i]),
+                        float(data_fetched['temperature_2m_min'][i]),
+                        float(data_fetched['temperature_2m_mean'][i]),
+                        float(data_fetched['apparent_temperature_max'][i]),
+                        float(data_fetched['apparent_temperature_min'][i]),
+                        float(data_fetched['apparent_temperature_mean'][i]),
+                        float(data_fetched['daylight_duration'][i]),
+                        float(data_fetched['sunshine_duration'][i]),
+                        float(data_fetched['precipitation_sum'][i]),
+                        float(data_fetched['rain_sum'][i]),
+                        float(data_fetched['precipitation_hours'][i]),
+                        float(data_fetched['wind_speed_10m_max'][i]),
+                        float(data_fetched['wind_gusts_10m_max'][i]),
+                        float(data_fetched['wind_direction_10m_dominant'][i]),
+                        float(data_fetched['shortwave_radiation_sum'][i]),
+                        float(data_fetched['et0_fao_evapotranspiration'][i]),
+                        day_of_year  # Add the computed day of the year
+                    )
+
+                    # Insert data into the SQLite database
+                    cursor.execute('''
+                        INSERT INTO weather_data (
+                            latitude, longitude, date, elevation,
+                            temperature_2m_max, temperature_2m_min, temperature_2m_mean,
+                            apparent_temperature_max, apparent_temperature_min, apparent_temperature_mean,
+                            daylight_duration, sunshine_duration, precipitation_sum, rain_sum,
+                            precipitation_hours, wind_speed_10m_max, wind_gusts_10m_max,
+                            wind_direction_10m_dominant, shortwave_radiation_sum, et0_fao_evapotranspiration, day
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ''', row_data)
+
+                    # Add new entry to existing_entries set to avoid re-fetching
+                    existing_entries.add((latitude, longitude, date))
+
+                conn.commit()
+                print(
+                    f"Successfully stored new data for LAT={latitude}, LON={longitude}.")
+                time.sleep(6)  # Wait before next API request
+
+            except Exception as e:
+                print(
+                    f"Failed to fetch data for LAT={latitude}, LON={longitude}: {e}")
+                time.sleep(5)  # Wait before retrying the next request
+
+    # Ensure only one record per (latitude, longitude, date) exists
+    cursor.execute('''
+        DELETE FROM weather_data
+        WHERE rowid NOT IN (
+            SELECT MIN(rowid)
+            FROM weather_data
+            GROUP BY latitude, longitude, date
+        )
+    ''')
+    conn.commit()
+
+    # Close the database connection
+    conn.close()
+    print(f"All new data saved successfully in {destination_db}.")
+
+
 # Examples
 # append_whole_year_data_of_colonies(source_excel="CF.xlsx", destination_db="CF.db")
 # append_whole_year_data_of_colonies(source_excel="Test2.xlsx", destination_db="Test2.db")
 # append_accumulation("Test2.db", "Test2.db")
 # append_whole_year_data_of_colonies(source_excel="CG.xlsx", destination_db="CG.db")
 # append_accumulation("CG.db", "CG_cumulative.db")
+# fetch_climate_data()
+
+# Example Usage:
+# Path to the CSV file containing LATDD and LONDD
+csv_file_path = "./db/middle_west_points.csv"
+sqlite_db_path = "./db/middle_west_points_data_2024.db"
+fetch_whole_year_data_from_csv(csv_file_path, sqlite_db_path)
+ensure_day_column_exists(sqlite_db_path)
+
+# Path to the CSV file containing LATDD and LONDD
+csv_file_path = "./db/north_points.csv"
+sqlite_db_path = "./db/north_points_data_2024.db"  # Path to save SQLite database
+fetch_whole_year_data_from_csv(csv_file_path, sqlite_db_path)
+ensure_day_column_exists(sqlite_db_path)
+
+# Path to the CSV file containing LATDD and LONDD
+csv_file_path = "./db/south_points.csv"
+sqlite_db_path = "./db/south_points_data_2024.db"  # Path to save SQLite database
+fetch_whole_year_data_from_csv(csv_file_path, sqlite_db_path)
+ensure_day_column_exists(sqlite_db_path)

@@ -12,7 +12,9 @@ os.makedirs("output", exist_ok=True)
 # Define the database paths
 cf_path = "./db/CF_cumulative.db"
 cg_path = "./db/CG_cumulative.db"
-
+north_path = "./db/north_points_data_2024.db"
+middle_west_path = "./db/middle_west_points_data_2024.db"
+south_path = "./db/south_points_data_2024.db"
 
 # Fetch data from the SQLite database
 def fetch_data_from_db(db_path, table_name):
@@ -29,7 +31,9 @@ def fetch_data_from_db(db_path, table_name):
 # Fetch data from the two databases
 cf_data = fetch_data_from_db(cf_path, "weather_data")
 cg_data = fetch_data_from_db(cg_path, "weather_data")
-
+north_data = fetch_data_from_db(north_path, "weather_data")
+middle_west_data = fetch_data_from_db(middle_west_path, "weather_data")
+south_data = fetch_data_from_db(south_path, "weather_data")
 
 # Display the first few rows of the data
 print("CF Data:")
@@ -58,6 +62,8 @@ required_columns = [
 
 # Function to check for missing columns and select required columns
 def prepare_data(data, required_columns):
+    if 'flight' not in data.columns and 'flight' in required_columns:
+        required_columns.remove('flight')
     """Check for missing columns and prepare the dataset."""
     missing_columns = set(required_columns) - set(data.columns)
     if missing_columns:
@@ -169,6 +175,9 @@ def generate_summary_table(data, prefix, output_folder="output"):
 # Prepare the datasets (cf_data and cg_data)
 cf_data = prepare_data(cf_data, required_columns)
 cg_data = prepare_data(cg_data, required_columns)
+north_data = prepare_data(north_data, required_columns)
+middle_west_data = prepare_data(middle_west_data, required_columns)
+south_data = prepare_data(south_data, required_columns)
 
 # Split the data into training and testing sets
 cf_train_data, cf_test_data = split_data(cf_data)
@@ -181,6 +190,9 @@ save_dataset_summary(cg_train_data, cg_test_data, prefix="CG")
 # Generate summaries for CF and CG datasets
 cf_summary = generate_summary_table(cf_data, prefix="CF")
 cg_summary = generate_summary_table(cg_data, prefix="CG")
+north_summary = generate_summary_table(north_data, prefix="north")
+middle_west_summary = generate_summary_table(middle_west_data, prefix="middle_west")
+south_summary = generate_summary_table(south_data, prefix="south")
 
 # Display the first few rows of training data for verification
 print("CF Training Data:")

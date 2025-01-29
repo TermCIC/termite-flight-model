@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import json
 import os
+import matplotlib.font_manager as fm
 
 # Set global font to Arial
 plt.rcParams["font.family"] = "Arial"
@@ -76,7 +77,7 @@ def plot_flight_frequency_density(test_data, title="Kernel Density Plot of Fligh
     # Ensure the target column is numeric
     test_data[target_column] = test_data[target_column].astype(int)
     test_data["Flight"] = test_data[target_column]
-
+    
     # Main figure and density plot
     fig, ax = plt.subplots(figsize=(4, 3))
 
@@ -132,7 +133,7 @@ def plot_flight_frequency_density(test_data, title="Kernel Density Plot of Fligh
     plt.show()
 
 
-def plot_ensemble_score_density_points(ensemble_score, test_data, title="Ensemble Score Densities", output_filename=None):
+def plot_ensemble_score_density_points(ensemble_score, test_data, title="Ensemble Score Densities", output_filename=None, specific_score=None):
     """Plot densities of ensemble scores at specific points (0, 0.25, 0.5, 0.75, 1) in the same figure."""
     # Define the month ranges for a non-leap year
     month_ranges = {
@@ -160,7 +161,10 @@ def plot_ensemble_score_density_points(ensemble_score, test_data, title="Ensembl
     fig, ax = plt.subplots(figsize=(4, 3))
 
     # Define specific scores to calculate densities
-    score_levels = [0, 0.25, 0.5, 0.75, 1]
+    if not specific_score:
+        score_levels = [0, 0.25, 0.5, 0.75, 1]
+    else:
+        score_levels = specific_score
 
     # Plot densities for specific ensemble score levels
     for score in score_levels:
@@ -241,3 +245,79 @@ def collect_evaluation_results(output_csv="./output/evaluation_results_summary.c
     df = pd.DataFrame(organized_data)
     df.to_csv(output_csv, index=False)
     print(f"Saved organized evaluation results to {output_csv}")
+
+def plot_interactions_density(
+    ensemble_score_species_A, 
+    ensemble_score_species_B, 
+    ensemble_score_interaction, 
+    test_data, 
+    title="", 
+    output_filename=None
+):
+    """
+    Plot densities of ensemble scores for species A, species B, and their interaction over the year.
+
+    Parameters:
+    - ensemble_score_species_A: pd.Series - Ensemble scores for species A
+    - ensemble_score_species_B: pd.Series - Ensemble scores for species B
+    - ensemble_score_interaction: pd.Series - Interaction scores (species A * species B)
+    - test_data: pd.DataFrame - Dataframe containing the "day" column
+    - title: str - Title for the plot
+    - output_filename: str (optional) - If provided, saves the plot to this filename
+    """
+    # Define the month ranges for a non-leap year
+    month_ranges = {
+        "Jan": (1, 31), "Feb": (32, 59), "Mar": (60, 90), "Apr": (91, 120),
+        "May": (121, 151), "Jun": (152, 181), "Jul": (182, 212), "Aug": (213, 243),
+        "Sep": (244, 273), "Oct": (274, 304), "Nov": (305, 334), "Dec": (335, 365)
+    }
+
+    # Create a DataFrame for plotting
+    score_dist_data = pd.DataFrame({
+        "Coptotermes formosanus": ensemble_score_species_A,
+        "Coptotermes gestroi": ensemble_score_species_B,
+        "Interaction": ensemble_score_interaction,
+        "day": test_data["day"]
+    })
+
+    # Initialize the figure
+    fig, ax = plt.subplots(figsize=(10, 3))
+
+    # Plot density distributions
+    sns.kdeplot(data=score_dist_data, x="day", weights="Coptotermes formosanus", fill=True, alpha=0.5, label="Coptotermes formosanus", ax=ax)
+    sns.kdeplot(data=score_dist_data, x="day", weights="Coptotermes gestroi", fill=True, alpha=0.5, label="Coptotermes gestroi", ax=ax)
+    sns.kdeplot(data=score_dist_data, x="day", weights="Interaction", fill=True, alpha=0.5, label="Interaction", ax=ax)
+
+    # Set labels and limits
+    italic_font = fm.FontProperties(style='italic', size=14)
+
+    # ax.set_xlabel("Day of Year", fontsize=14)
+    ax.set_xlabel("")
+    ax.set_ylabel("Probability Density", fontsize=14)
+    ax.set_xlim(1, 365)
+    ax.set_ylim(0, 0.1)  # Auto-scale y-axis
+    ax.grid(True, linestyle="--", alpha=0.6)
+    legend = ax.legend(title="", fontsize=14, title_fontsize=14)
+    for text in legend.get_texts():
+        if text.get_text() != "Interaction":
+            text.set_fontproperties(italic_font)
+
+    ax.tick_params(axis='both', labelsize=14)
+
+    # Create a secondary x-axis for month labels
+    ax_months = ax.twiny()
+    ax_months.set_xlim(ax.get_xlim())
+    ax_months.set_xticks([(start + end) // 2 for start, end in month_ranges.values()])
+    ax_months.set_xticklabels(list(month_ranges.keys()), fontsize=14)
+    ax_months.tick_params(axis='both', labelsize=14)
+    ax_months.xaxis.set_ticks_position("bottom")
+    ax_months.spines["bottom"].set_position(("outward", 20))
+
+    plt.title(title, fontsize=16)
+    plt.tight_layout()
+
+    # Save or show the plot
+    if output_filename:
+        plt.savefig(output_filename, dpi=300)
+        print(f"Saved figure to {output_filename}")
+    plt.show()

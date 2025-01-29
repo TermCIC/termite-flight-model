@@ -8,7 +8,7 @@ from sklearn.metrics import (
     confusion_matrix,
     accuracy_score,
 )
-from read_data import cf_test_data, cg_test_data
+from read_data import cf_test_data, cg_test_data, north_data, middle_west_data, south_data
 
 
 # Function to load models from the models directory
@@ -105,13 +105,13 @@ def run_evaluation(test_data, prefix):
     models = load_all_models(prefix)
     for name, model in models.items():
         print(f"Evaluating {prefix} {name}...")
-        predictions = model.predict_proba(X_test)[:, 1]
+        predictions = model.predict_proba(test_data)[:, 1]
         final_classes, mcc = evaluate_model(predictions, test_data, prefix, name)
         plot_results(test_data, final_classes, title=f"{prefix.upper()} {name} Predictions")
 
 
 # Main evaluation function
-def run_evaluation():
+def run_all_evaluation():
     print("Evaluating CF dataset...")
     run_evaluation(cf_test_data, "cf")
 

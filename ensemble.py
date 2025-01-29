@@ -10,10 +10,13 @@ def load_evaluation_results(prefix, model_name):
 
 
 def predict_with_model(model, test_data, threshold, target_column="flight"):
-    """Generate predictions from a model."""
-    X_test = test_data.drop(columns=[target_column])
+    if target_column in test_data.columns:
+        X_test = test_data.drop(columns=[target_column])
+    else:
+        X_test = test_data.copy()
     predictions = model.predict_proba(X_test)[:, 1]
     return (predictions > threshold).astype(int)
+
 
 
 def calculate_ensemble_score(test_data, prefix, target_column="flight"):
