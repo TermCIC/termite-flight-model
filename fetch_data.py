@@ -462,13 +462,6 @@ def fetch_whole_year_data_from_csv(csv_file, destination_db):
     conn = sqlite3.connect(destination_db)
     cursor = conn.cursor()
 
-    # Check if 'day' column exists in the table, if not, add it
-    cursor.execute("PRAGMA table_info(weather_data);")
-    columns = [col[1] for col in cursor.fetchall()]
-    if 'day' not in columns:
-        cursor.execute("ALTER TABLE weather_data ADD COLUMN day INTEGER;")
-        conn.commit()
-
     # Create table if it does not exist
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS weather_data (

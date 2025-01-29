@@ -1,5 +1,6 @@
 from ensemble import *
 from visualization import *
+import shap
 
 # Ensure the output directory exists
 os.makedirs("output", exist_ok=True)

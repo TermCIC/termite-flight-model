@@ -31,6 +31,20 @@ cg_south_ensemble = filter_ensemble_score(calculate_ensemble_score(south_data, "
 south_interaction_score = calculate_interaction_score(cf_south_ensemble, cg_south_ensemble)
 print(sum(south_interaction_score))
 
+# South region
+cf_south_ensemble = filter_ensemble_score(calculate_ensemble_score(south_data, "cf", target_column="flight"))
+cg_south_ensemble = filter_ensemble_score(calculate_ensemble_score(south_data, "cg", target_column="flight"))
+south_interaction_score = calculate_interaction_score(cf_south_ensemble, cg_south_ensemble)
+print(sum(south_interaction_score))
+
+# Combine all ensemble scores
+total_cf_ensemble = filter_ensemble_score(cf_north_ensemble + cf_middle_west_ensemble + cf_south_ensemble)
+total_cg_ensemble = filter_ensemble_score(cg_north_ensemble + cg_middle_west_ensemble + cg_south_ensemble)
+
+# Calculate the total interaction score
+total_interaction_score = calculate_interaction_score(total_cf_ensemble, total_cg_ensemble)
+print("Total interaction score sum:", sum(total_interaction_score))
+
 # Plot
 plot_interactions_density(
     cf_north_ensemble,
@@ -55,3 +69,14 @@ plot_interactions_density(
     south_data,
     output_filename="output/south_ensemble_score.png"
     )
+
+# Concatenate data while resetting the index to avoid duplicate labels
+combined_data = pd.concat([north_data, middle_west_data, south_data], ignore_index=True)
+
+plot_interactions_density(
+    total_cf_ensemble,
+    total_cg_ensemble,
+    total_interaction_score,
+    combined_data,  # Combine data from all regions
+    output_filename="output/total_ensemble_score.png"
+)
