@@ -12,9 +12,9 @@ os.makedirs("output", exist_ok=True)
 # Define the database paths
 cf_path = "./db/CF_cumulative.db"
 cg_path = "./db/CG_cumulative.db"
-north_path = "./db/north_points_data_2024.db"
-middle_west_path = "./db/middle_west_points_data_2024.db"
-south_path = "./db/south_points_data_2024.db"
+north_path = "./db/north_points_data_2024_cumulative.db"
+middle_west_path = "./db/middle_west_points_data_2024_cumulative.db"
+south_path = "./db/south_points_data_2024_cumulative.db"
 
 # Fetch data from the SQLite database
 def fetch_data_from_db(db_path, table_name):
@@ -43,22 +43,22 @@ print(cg_data.head())
 
 
 # Define the list of required columns
-#required_columns = [
-#    "flight", "elevation", "temperature_2m_max", "temperature_2m_min", "temperature_2m_mean",
-#    "apparent_temperature_max", "apparent_temperature_min", "apparent_temperature_mean",
-#    "daylight_duration", "precipitation_sum", "rain_sum", "precipitation_hours",
-#    "wind_speed_10m_max", "wind_gusts_10m_max", "shortwave_radiation_sum",
-#    "et0_fao_evapotranspiration", "latitude", "longitude", "day", "cumulative_temperature_2m_mean",
-#    "cumulative_apparent_temperature_mean", "cumulative_daylight_duration",
-#    "cumulative_sunshine_duration", "cumulative_precipitation_sum", "cumulative_rain_sum",
-#    "cumulative_precipitation_hours", "cumulative_shortwave_radiation_sum",
-#    "cumulative_et0_fao_evapotranspiration"
-#]
-
 required_columns = [
     "flight", "elevation", "temperature_2m_max", "temperature_2m_min", "temperature_2m_mean",
-    "precipitation_sum", "latitude", "longitude", "day"
-    ]
+    "apparent_temperature_max", "apparent_temperature_min", "apparent_temperature_mean",
+    "daylight_duration", "precipitation_sum", "rain_sum", "precipitation_hours",
+    "wind_speed_10m_max", "wind_gusts_10m_max", "shortwave_radiation_sum",
+    "et0_fao_evapotranspiration", "latitude", "longitude", "day", "cumulative_temperature_2m_mean",
+    "cumulative_apparent_temperature_mean", "cumulative_daylight_duration",
+    "cumulative_sunshine_duration", "cumulative_precipitation_sum", "cumulative_rain_sum",
+    "cumulative_precipitation_hours", "cumulative_shortwave_radiation_sum",
+    "cumulative_et0_fao_evapotranspiration"
+]
+
+#required_columns = [
+#    "flight", "elevation", "temperature_2m_max", "temperature_2m_min", "temperature_2m_mean",
+#    "precipitation_sum", "latitude", "longitude", "day"
+#    ]
 
 # Function to check for missing columns and select required columns
 def prepare_data(data, required_columns):
@@ -71,7 +71,7 @@ def prepare_data(data, required_columns):
     return data[required_columns].dropna()
 
 
-def split_data(data, target_column="flight", test_size=0.25, downsample_ratio=3/365, save_path="splitted_data"):
+def split_data(data, target_column="flight", test_size=0.3, downsample_ratio=3/365, save_path="splitted_data"):
     # Ensure the target column is categorical for stratification
     data[target_column] = data[target_column].astype('category')
 
@@ -85,24 +85,35 @@ def split_data(data, target_column="flight", test_size=0.25, downsample_ratio=3/
     print(f"Testing dataset size: {len(test_data)}")
 
     # Separate majority and minority classes
-    flight_0 = train_data[train_data[target_column] == 0]
-    flight_not_0 = train_data[train_data[target_column] != 0]
+    train_flight_0 = train_data[train_data[target_column] == 0]
+    train_flight_not_0 = train_data[train_data[target_column] != 0]
+    test_flight_0 = test_data[test_data[target_column] == 0]
+    test_flight_not_0 = test_data[test_data[target_column] != 0]
 
-    print(f"Training 'flight=0' size before downsampling: {len(flight_0)}")
-    print(f"Training 'flight!=0' size: {len(flight_not_0)}")
+    print(f"Training 'flight=0' size before downsampling: {len(train_flight_0)}")
+    print(f"Training 'flight!=0' size: {len(train_flight_not_0)}")
+    print(f"Testing 'flight=0' size before downsampling: {len(test_flight_0)}")
+    print(f"Testing 'flight!=0' size: {len(test_flight_not_0)}")
 
     # Downsample the majority class
-    sampled_flight_0 = flight_0.sample(
-        frac=downsample_ratio, random_state=123
+    train_sampled_flight_0 = train_flight_0.sample(
+        frac=downsample_ratio, random_state=168
+    )
+    test_sampled_flight_0 = test_flight_0.sample(
+        frac=downsample_ratio, random_state=168
     )
 
     print(
-        f"Training 'flight=0' size after downsampling: {len(sampled_flight_0)}")
-
+        f"Training 'flight=0' size after downsampling: {len(train_sampled_flight_0)}")
+    print(
+        f"Testing 'flight=0' size after downsampling: {len(test_sampled_flight_0)}")
+    
     # Combine downsampled majority class with the minority class
-    train_data = pd.concat([sampled_flight_0, flight_not_0], ignore_index=True)
+    train_data = pd.concat([train_sampled_flight_0, train_flight_not_0], ignore_index=True)
+    test_data = pd.concat([test_sampled_flight_0, test_flight_not_0], ignore_index=True)
 
     print(f"Final training dataset size after downsampling: {len(train_data)}")
+    print(f"Final testing dataset size after downsampling: {len(test_data)}")
 
     # Save datasets as CSV
     train_csv_path = f"{save_path}/train_data.csv"

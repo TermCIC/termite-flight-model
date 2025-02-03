@@ -75,8 +75,8 @@ def plot_taiwan_map(cf_file, cg_file, taiwan_shapefile):
 
 # Example usage
 # Replace with actual file paths for the CF and CG Excel files and the Taiwan shapefile
-cf_excel_path = "CF.xlsx"
-cg_excel_path = "CG.xlsx"
+cf_excel_path = "db/CF.xlsx"
+cg_excel_path = "db/CG.xlsx"
 taiwan_shapefile_path = "world-administrative-boundaries.geojson"  # Use a GeoJSON or SHP file for Taiwan's boundaries
 plot_taiwan_map(cf_excel_path, cg_excel_path, taiwan_shapefile_path)
 
