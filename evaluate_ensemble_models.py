@@ -15,21 +15,14 @@ cg_ensemble = cg_ensemble_model(cg_test_data)
 
 
 def evaluate_ensemble_scores(ensemble_scores, test_data, prefix):
-    """Evaluate ensemble scores at specific thresholds."""
-    thresholds = [0.2, 0.4, 0.6, 0.8, 1]
-    for threshold in thresholds:
-        # Apply the threshold to generate predictions
-        probabilities = (ensemble_scores >= threshold).astype(int)
-        model_name = f"ensemble_score_{threshold:.2f}"
-        # Evaluate using the existing evaluate_model function
-        evaluation_results = evaluate_model(
-            probabilities, threshold, test_data)
-        # Save results to a JSON file
-        os.makedirs("./evaluation_results", exist_ok=True)
-        json_file = f"./evaluation_results/{prefix}_{model_name}_evaluation.json"
-        with open(json_file, "w") as f:
-            json.dump(evaluation_results, f, indent=4)
-        print(f"Saved evaluation results to {json_file}")
+    # Evaluate using the existing evaluate_model function
+    evaluation_results = evaluate_model(ensemble_scores, test_data)
+    # Save results to a JSON file
+    os.makedirs("./evaluation_results", exist_ok=True)
+    json_file = f"./evaluation_results/{prefix}_ensemble_evaluation.json"
+    with open(json_file, "w") as f:
+        json.dump(evaluation_results, f, indent=4)
+    print(f"Saved evaluation results to {json_file}")
 
 
 def collect_evaluation_results(output_csv="./output/evaluation_results_summary.csv"):

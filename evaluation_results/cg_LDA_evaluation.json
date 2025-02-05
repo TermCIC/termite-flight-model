@@ -1,14 +1,14 @@
 {
-    "Accuracy": 0.863013698630137,
-    "MCC": 0.650158436384285,
+    "Accuracy": 0.7432432432432432,
+    "MCC": 0.4954336943068623,
     "Confusion Matrix": {
         "Actual 0": {
-            "Predicted 0": 146,
-            "Predicted 1": 18
+            "Predicted 0": 24,
+            "Predicted 1": 13
         },
         "Actual 1": {
-            "Predicted 0": 12,
-            "Predicted 1": 43
+            "Predicted 0": 6,
+            "Predicted 1": 31
         }
     }
 }

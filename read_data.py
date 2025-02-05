@@ -71,7 +71,7 @@ def prepare_data(data, required_columns):
     return data[required_columns].dropna()
 
 
-def split_data(data, target_column="flight", test_size=0.3, downsample_ratio=3/365, save_path="splitted_data"):
+def split_data(data, target_column="flight", test_size=0.2, downsample_ratio=1/365, save_path="splitted_data"):
     # Ensure the target column is categorical for stratification
     data[target_column] = data[target_column].astype('category')
 

@@ -64,10 +64,10 @@ def predict_with_threshold(probabilities, threshold):
     return (probabilities > threshold).astype(int)
 
 
-def evaluate_model(probabilities, threshold, test_data):
+def evaluate_model(probabilities, test_data):
     """Evaluate a trained model with predictions, MCC, and save results."""
     y_test = test_data["flight"]
-    final_classes = predict_with_threshold(probabilities, threshold)
+    final_classes = predict_with_threshold(probabilities, 0.5)
     mcc = calculate_mcc(final_classes, y_test)
     # Calculate confusion matrix and accuracy
     cm = confusion_matrix(y_test, final_classes)
@@ -87,14 +87,12 @@ def evaluate_model(probabilities, threshold, test_data):
 def run_evaluation(test_data, prefix):
     """Run evaluation for all models in the specified prefix."""
     models = load_all_models(prefix)
-    thresholds = load_all_thresholds(prefix)
     for name, model in models.items():
         print(f"Evaluating {prefix} {name}...")
         X_test = test_data.drop(columns=["flight"])
         probabilities = model.predict_proba(X_test)[:, 1]
-        threshold = thresholds.get(name)
         evaluation_results = evaluate_model(
-            probabilities, threshold, test_data)
+            probabilities, test_data)
         # Save results to a JSON file
         os.makedirs("./evaluation_results", exist_ok=True)
         json_file = f"./evaluation_results/{prefix}_{name}_evaluation.json"

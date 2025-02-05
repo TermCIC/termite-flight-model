@@ -8,7 +8,7 @@ import matplotlib.font_manager as fm
 
 
 def mean_ensemble_score(score_series, test_data):
-    score_series = np.where(score_series >= 0.6, score_series, 0)
+    score_series = np.where(score_series >= 0.5, score_series, 0)
     df = pd.DataFrame({
         "day": test_data["day"],
         "score": score_series
@@ -21,6 +21,8 @@ def mean_ensemble_score(score_series, test_data):
 
 
 def calculate_interaction_score(ensemble_A, ensemble_B):
+    ensemble_A = np.where(ensemble_A >= 0.5, ensemble_A, 0)
+    ensemble_B = np.where(ensemble_B >= 0.5, ensemble_B, 0)
     # Multiply the two series elementwise
     product = ensemble_A * ensemble_B
     # Replace any NaN or inf values with 0
@@ -34,8 +36,9 @@ cf_north_ensemble = mean_ensemble_score(
     cf_ensemble_model(north_data), north_data)
 cg_north_ensemble = mean_ensemble_score(
     cg_ensemble_model(north_data), north_data)
-north_interaction_score = calculate_interaction_score(
-    cf_north_ensemble, cg_north_ensemble)
+north_interaction_score = mean_ensemble_score(calculate_interaction_score(
+    cf_ensemble_model(north_data), cg_ensemble_model(north_data)), north_data)
+
 print(sum(north_interaction_score))
 
 # Middle West region
@@ -43,8 +46,9 @@ cf_middle_west_ensemble = mean_ensemble_score(
     cf_ensemble_model(middle_west_data), middle_west_data)
 cg_middle_west_ensemble = mean_ensemble_score(
     cg_ensemble_model(middle_west_data), middle_west_data)
-middle_west_interaction_score = calculate_interaction_score(
-    cf_middle_west_ensemble, cg_middle_west_ensemble)
+middle_west_interaction_score = mean_ensemble_score(calculate_interaction_score(
+    cf_ensemble_model(middle_west_data), cg_ensemble_model(middle_west_data)), middle_west_data)
+
 print(sum(middle_west_interaction_score))
 
 # South region
@@ -52,8 +56,8 @@ cf_south_ensemble = mean_ensemble_score(
     cf_ensemble_model(south_data), south_data)
 cg_south_ensemble = mean_ensemble_score(
     cg_ensemble_model(south_data), south_data)
-south_interaction_score = calculate_interaction_score(
-    cf_south_ensemble, cg_south_ensemble)
+south_interaction_score = mean_ensemble_score(calculate_interaction_score(
+    cf_ensemble_model(south_data), cg_ensemble_model(south_data)), south_data)
 print(sum(south_interaction_score))
 
 
@@ -63,7 +67,7 @@ def plot_interactions_line(
     ensemble_score_interaction,
     title="",
     output_filename=None,
-    smooth_window=25 # window size for moving average smoothing
+    smooth_window=25  # window size for moving average smoothing
 ):
     # Define the month ranges for a leap year (1-366 days)
     month_ranges = {
