@@ -28,7 +28,7 @@ def calculate_interaction_score(ensemble_A, ensemble_B):
     # Replace any NaN or inf values with 0
     product = np.nan_to_num(product, nan=0.0, posinf=0.0, neginf=0.0)
     # Return the square root of the cleaned product
-    return np.sqrt(product)
+    return product
 
 
 # North region
