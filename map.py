@@ -48,8 +48,8 @@ def plot_taiwan_map(cf_file, cg_file, taiwan_shapefile):
     taiwan_map.plot(ax=ax, color='lightgray', edgecolor='black')
 
     # Plot CF and CG GPS locations
-    cf_gdf.plot(ax=ax, color='blue', markersize=10, label='Coptotermes formosanus')
-    cg_gdf.plot(ax=ax, color='red', markersize=10, label='Coptotermes gestroi')
+    cf_gdf.plot(ax=ax, color='blue', markersize=10, label=r'$\it{Coptotermes\ formosanus}$')
+    cg_gdf.plot(ax=ax, color='red', markersize=10, label=r'$\it{Coptotermes\ gestroi}$')
 
     # Create italic font properties for the legend
     italic_font = fm.FontProperties(style='italic')
